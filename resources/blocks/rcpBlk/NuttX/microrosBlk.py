@@ -2,7 +2,7 @@
 from supsisim.RCPblk import RCPblk
 from scipy import size
 
-def microrosBlk(pin, pout, pub, subs):
+def microrosBlk(pin, pout):
     """
 
     Call:   MICROROSBlk(pin, pout, pub, subs)
@@ -28,7 +28,5 @@ def microrosBlk(pin, pout, pub, subs):
     if (nout > 4):
         raise ValueError("Block have max 4 outputs: received %i output ports" % (nout))
     
-    n = len(pub)
-    
-    blk = RCPblk('microros', pin, pout, [0,0], 0, [], [n], pub+subs)
+    blk = RCPblk('microros', pin, pout, [0,0], 0, [], [])
     return blk

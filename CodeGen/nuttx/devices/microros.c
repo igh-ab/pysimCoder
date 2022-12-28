@@ -16,59 +16,33 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
 
-#include <rcl/rcl.h>
-#include <rcl/error_handling.h>
-#include <rclc/rclc.h>
-#include <rclc/executor.h>
-#include <rmw_microros/rmw_microros.h>
-
-#include <microros/pysim_interfaces/msg/pysim_publisher.h>
-#include <microros/pysim_interfaces/msg/pysim_subscriber.h>
-
 #include <pyblock.h>
-#include <string.h>
 
-#define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){printf("Failed status on line %d: %d. Aborting.\n",__LINE__,(int)temp_rc); return 1;}}
-
-static int nNodes = 0;
-void ** yGlobal;
+extern double microros_input[4];
+extern double microros_output[4];
 
 static void init(python_block *block)
 {
-  int * intPar    = block->intPar;
-  char pub[20];
-  char subs[20];
-  int n = intPar[0];
-
-  if(nNode){
-    printf("Max 1 microROS node allowed!\n");
-    exit(1);
-  }
-  strncpy(pub, block->str,n);
-  strcpy(subs, &(block->str[n]));
-  pub[n]='\0';
-  printf("publisher: %s\n", pub);
-  printf("subscriber: %s\n", subs);
-  yGlobal = block.y;
-
-  
-  
 }
 
 static void inout(python_block *block)
 {
-  /* double *y = block->y[0]; */
-  /* double *u = block->u[0]; */
+  int i;
+  double * u;
+  double * y;
   
+  for(i=0; i<block->nin;i++){
+    u = (double *) block->u[i];
+    microros_output[i] = u[0];
+  }
+  for(i=0; i<block->nout;i++){
+    y = (double *) block->y[i];
+    y[0] = microros_input[i];
+  }
 }
 
 static void end(python_block *block)
 {
-  /* double * realPar = block->realPar; */
-  /* int * intPar    = block->intPar; */
-  /* double *y = block->y[0]; */
-  /* double *u = block->u[0]; */
-
 }
 
 void microros(int flag, python_block *block)

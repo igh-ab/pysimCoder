@@ -6,6 +6,6 @@
   "stin": 1,
   "stout": 1,
   "icon": "MICROROS",
-  "params": "microrosBlk|Publisher topic:'nuttx_publisher'|Subscriber topic:'nuttx_subscriber'",
+  "params": "microrosBlk",
   "help": "This block only works with NuttX if microros have been installed!\n"
 }

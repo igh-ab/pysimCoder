@@ -65,6 +65,11 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
     fn = model + '.c'
     f=open(fn,'w')
     strLn = "#include <pyblock.h>\n#include <stdio.h>\n#include <stdlib.h>\n\n"
+    strLn += "#ifdef PDSERV\n"
+    strLn += "#include <pdserv.h>\n\n"
+    strLn += "extern struct pdserv* pdserv;\n"
+    strLn += "extern struct pdtask* pdtask;\n"
+    strLn += "#endif\n\n"
     f.write(strLn)
 
     N = size(Blocks)
@@ -199,6 +204,10 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
         else:
             port = "outptr_" + str(n)
         strLn += "  block_" + model + "[" + str(n) + "].y    = " + port + ";\n"
+        strLn += "#ifdef PDSERV\n"
+        for outs in range(0,nout):
+            strLn += "  pdserv_signal(pdtask, 1, \"" + blk.sysPath + "/" + str(outs) + "\",pd_double_T,(double*)block_" + model + "[" + str(n) + "].y["+ str(outs) +"], 1, 0);\n"
+        strLn += "#endif\n"
         if (size(blk.realPar) != 0):
             par = "realPar_" + str(n)
             parNames = "realParNames_" + str(n)
@@ -210,6 +219,11 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
         strLn += "  block_" + model + "[" + str(n) + "].realPar = " + par + ";\n"
         strLn += "  block_" + model + "[" + str(n) + "].realParNum = " + str(num) + ";\n"
         strLn += "  block_" + model + "[" + str(n) + "].realParNames = " + parNames + ";\n"
+        if num > 0:
+            strLn += "#ifdef PDSERV\n"
+            for reals in range(0,num):
+                strLn += "  pdserv_parameter(pdserv, \"" + blk.sysPath + "/" + blk.realParNames[reals]+"\", 0666, pd_double_T, &block_" + model + "[" + str(n) + "].realPar["+str(reals)+"], 1, 0, 0, 0);\n"
+            strLn += "#endif\n"
         if (size(blk.intPar) != 0):
             par = "intPar_" + str(n)
             parNames = "intParNames_" + str(n)
@@ -221,6 +235,13 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
         strLn += "  block_" + model + "[" + str(n) + "].intPar = " + par + ";\n"
         strLn += "  block_" + model + "[" + str(n) + "].intParNum = " + str(num) + ";\n"
         strLn += "  block_" + model + "[" + str(n) + "].intParNames = " + parNames + ";\n"
+        if num > 0 and size(blk.intParNames) == num:
+            strLn += "#ifdef PDSERV\n"
+            print(blk)
+            for ints in range(0,num):
+                strLn += "  pdserv_parameter(pdserv, \"" + blk.sysPath + "/" + blk.intParNames[ints]+"\", 0666, pd_sint_T, &block_" + model + "[" + str(n) + "].intPar["+str(ints) +"], 1, 0, 0, 0);\n"
+            strLn += "#endif\n"
+
         strLn += "  block_" + model + "[" + str(n) + "].str = " +'"' + blk.str + '"' + ";\n"
         strLn += "  block_" + model + "[" + str(n) + "].ptrPar = NULL;\n"
         f.write(strLn)

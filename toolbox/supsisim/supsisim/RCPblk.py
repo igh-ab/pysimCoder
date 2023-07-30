@@ -53,3 +53,75 @@ class RCPblk:
         str += "String Parameter   : " + self.str.__str__() + "\n"
         return str
 
+    def genCode(self,codedata):
+
+        self.MdlFlags(codedata['MdlFlags'])
+
+        self.MdlCFlags(codedata['MdlFlags'],codedata['MdlCFlags'])
+
+        self.MdlLibraries(codedata['MdlFlags'],codedata['MdlLibraries'])
+
+        self.MdlCFiles(codedata['MdlFlags'],codedata['MdlCFiles'])
+
+        self.MdlIncludes(codedata['MdlFlags'],codedata['MdlIncludes'])
+
+        self.MdlPredefines(codedata['MdlFlags'],codedata['MdlPredefines'])
+
+        self.MdlDeclerations(codedata['MdlFlags'],codedata['MdlDeclerations'])
+
+        self.MdlFunctions(codedata['MdlFlags'],codedata['MdlFunctions'])
+
+        self.MdlStart(codedata['MdlFlags'],codedata['MdlStart'])
+
+        self.MdlEnd(codedata['MdlFlags'],codedata['MdlEnd'])
+
+        self.MdlRunPre(codedata['MdlFlags'],codedata['MdlRunPre'])
+
+        self.MdlRunPost(codedata['MdlFlags'],codedata['MdlRunPost'])
+
+        self.MdlRun(codedata['MdlFlags'],codedata['MdlRun'])
+
+    def MdlFlags(self,data=dict()):
+        pass
+
+    def MdlCFlags(self,mdlflags,data=list()):
+        pass
+ 
+    def MdlLibraries(self,mdlflags,data=list()):
+        pass
+
+    def MdlCFiles(self,mdlflags,data=list()):
+        pass
+
+    def MdlIncludes(self,mdlflags,data=list()):
+        pass
+
+    def MdlPredefines(self,mdlflags,data=list()):
+        pass
+
+    def MdlDeclerations(self,mdlflags,data=list()):
+        pass
+
+    def MdlFunctions(self,mdlflags,data=dict()):
+        pass
+
+    def MdlStart(self,mdlflags,data=list()):
+        pass
+
+    def MdlEnd(self,mdlflags,data=list()):
+        pass
+
+    def MdlRunPre(self,mdlflags,data=list()):
+        pass
+
+    def MdlRunPost(self,mdlflags,data=list()):
+        pass
+
+    def MdlRun(self,mdlflags,data=list()):
+        pass
+
+    def addToList(self, data, value):
+        if value in data:
+            return
+        else:
+            data.append(value)

@@ -23,6 +23,24 @@ import sys
 from supsisim.RCPblk import RCPblk
 from supsisim.SHVgen import genSHVtree, genSHVcode, genSHVheader, genSHVend
 
+def initCodeData():
+    codedata=dict()
+    codedata['MdlFlags'] = dict()
+    codedata['MdlCFlags'] = list()
+    codedata['MdlLibraries'] = list()
+    codedata['MdlCFiles'] = list()
+    codedata['MdlIncludes'] = list()
+    codedata['MdlPredefines'] = list()
+    codedata['MdlDeclerations'] = list()
+    codedata['MdlFunctions'] = dict()
+    codedata['MdlStart'] = list()
+    codedata['MdlEnd'] = list()
+    codedata['MdlRunPre'] = list()
+    codedata['MdlRunPost'] = list()
+    codedata['MdlRun'] = list()
+    return codedata
+
+
 def genCode(model, Tsamp, blocks, rkstep = 10):
     """Generate C-Code
 
@@ -62,9 +80,20 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
     if size(Blocks) == 0:
         raise ValueError('No possible to determine the block sequence')
 
+    N = size(Blocks)
+
+    codedata = initCodeData()
+
+    for n in range(0,N):
+        blk = Blocks[n]
+        blk.genCode(codedata)
+
+
     fn = model + '.c'
     f=open(fn,'w')
-    strLn = "#include <pyblock.h>\n#include <stdio.h>\n#include <stdlib.h>\n\n"
+    strLn = "#include <pyblock.h>\n"
+    strLn += "#include <stdio.h>\n"
+    strLn += "#include <stdlib.h>\n"
     strLn += "#ifdef PDSERV\n"
     strLn += "#include <pdserv.h>\n\n"
     strLn += "extern struct pdserv* pdserv;\n"
@@ -72,25 +101,38 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
     strLn += "#endif\n\n"
     f.write(strLn)
 
-    N = size(Blocks)
+    f.write("/*Block defined includes*/\n")
+    for header in codedata['MdlIncludes']:
+        f.write(header+"\n")
+       
+    f.write("\n/*Block defined predefines*/\n")
+    for predef in codedata['MdlPredefines']:
+        f.write(predef+"\n")
 
-    genSHVheader(f, model, N)
+
+    # genSHVheader(f, model, N)
 
     totContBlk = 0
     for blk in Blocks:
         totContBlk += blk.nx[0]
 
-    f.write("/* Function prototypes */\n\n")
 
-    prototypes = []
+    f.write("\n/*Block defined functions*/\n")
+    for func in codedata['MdlFunctions']:
+        f.write(codedata['MdlFunctions'][func]+"\n")
+
+
+    # f.write("/* Function prototypes */\n\n")
+
+    # prototypes = []
     
-    for blk in Blocks:
-        prototypes.append("void " + blk.fcn + "(int Flag, python_block *block);\n")
-    setProto = set(prototypes)
-    for el in setProto:
-        f.write(el)
+    # for blk in Blocks:
+    #     prototypes.append("void " + blk.fcn + "(int Flag, python_block *block);\n")
+    # setProto = set(prototypes)
+    # for el in setProto:
+    #     f.write(el)
 
-    f.write("\n")
+    # f.write("\n")
 
     strLn = "double " + model + "_get_tsamp(void)\n"
     strLn += "{\n"
@@ -176,6 +218,8 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
     if (environ["SHV_TREE_TYPE"] == "GSA_STATIC") and (environ["SHV_USED"] == "True"):
         genSHVtree(f, Blocks, Blks)
 
+    f.write("/* Worker funtions */\n\n")
+ 
     f.write("/* Initialization function */\n\n")
     strLn = "void " + model + "_init(void)\n"
     strLn += "{\n\n"
@@ -325,15 +369,18 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
     f.write("}\n\n")
     f.close()
 
-def genMake(model, template, addObj = ''):
+    return codedata
+
+def genMake(model, template, codedata, addObj = ''):
     """Generate the Makefile
 
-    Call: genMake(model, template)
+    Call: genMake(model, template, codedata)
 
     Parameters
     ----------
     model     : Model name
     template  : Template makefile
+    codedata  : Code generation data structure
     addObj    : Additional object files
 
     Returns

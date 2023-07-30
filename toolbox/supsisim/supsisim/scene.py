@@ -690,8 +690,9 @@ class Scene(QGraphicsScene):
 
         fn.write('fname = ' + "'" + fname + "'\n")
         fn.write('os.chdir("'+ fnm +'")\n')
-        fn.write('genCode(fname, ' + self.Ts + ', blks)\n')
-        fn.write("genMake(fname, '" + self.template + "', addObj = '" + self.addObjs + "')\n")
+        fn.write('')
+        fn.write('codedata = genCode(fname, ' + self.Ts + ', blks)\n')
+        fn.write("genMake(fname, '" + self.template + "', codedata, addObj = '" + self.addObjs + "')\n")
         fn.write('\nimport os\n')
         fn.write('os.system("make clean")\n')
         fn.write('os.system("make")\n')

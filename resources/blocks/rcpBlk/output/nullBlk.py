@@ -2,6 +2,17 @@
 from supsisim.RCPblk import RCPblk
 from scipy import size
 
+class NullBlk(RCPblk):
+
+   def MdlFunctions(self,mdlflags,data):
+      if 'toNull' in data:
+         return
+      data['toNull']="""
+      void toNull(int flag, python_block *block)
+      {
+      }
+      """
+
 def nullBlk(pin):
     """
 
@@ -17,5 +28,5 @@ def nullBlk(pin):
 
     """
 
-    blk = RCPblk('toNull', pin, [], [0,0], 1, [], [])
+    blk = NullBlk('toNull', pin, [], [0,0], 1, [], [])
     return blk

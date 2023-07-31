@@ -73,6 +73,8 @@ class RCPblk:
 
         self.MdlStart(codedata['MdlFlags'],codedata['MdlStart'])
 
+        self.MdlStartFinal(codedata['MdlFlags'],codedata['MdlStartFinal'])
+
         self.MdlEnd(codedata['MdlFlags'],codedata['MdlEnd'])
 
         self.MdlRunPre(codedata['MdlFlags'],codedata['MdlRunPre'])
@@ -82,42 +84,93 @@ class RCPblk:
         self.MdlRun(codedata['MdlFlags'],codedata['MdlRun'])
 
     def MdlFlags(self,data=dict()):
+        """
+        Add flags to react on during code generation
+        """
         pass
 
     def MdlCFlags(self,mdlflags,data=list()):
+        """
+        Add compiler CFlags
+        Example: -Wall
+        """
         pass
  
     def MdlLibraries(self,mdlflags,data=list()):
+        """
+        Add compiler linker libraries
+        Example: -lm
+        """
         pass
 
     def MdlCFiles(self,mdlflags,data=list()):
         pass
 
     def MdlIncludes(self,mdlflags,data=list()):
+        """
+        Add compiler include directives
+        Example: #include<math.h>
+        """
         pass
 
     def MdlPredefines(self,mdlflags,data=list()):
+        """
+        Declare preprocessor defines
+        """
         pass
 
     def MdlDeclerations(self,mdlflags,data=list()):
+        """
+        Declare global data variables
+        """
         pass
 
     def MdlFunctions(self,mdlflags,data=dict()):
+        """
+        Declare cyclic function call
+        """
         pass
 
     def MdlStart(self,mdlflags,data=list()):
+        """
+        Initial function calls
+        Example: Configure fieldbus
+        """
+        pass
+
+    def MdlStartFinal(self,mdlflags,data=list()):
+        """
+        Final code directly before going into cyclic mode
+        Example: Activate fieldbus configuration
+        """
         pass
 
     def MdlEnd(self,mdlflags,data=list()):
+        """
+        Add code to model end section
+        Example: Release fieldbus
+        """
         pass
 
     def MdlRunPre(self,mdlflags,data=list()):
+        """
+        Add code at beginning of cyclic loop
+        Example: Recieve fieldbus data
+        """
         pass
 
     def MdlRunPost(self,mdlflags,data=list()):
+        """
+        Add code to the end of cyclic loop
+        Example: Send fieldbus data
+        """
         pass
 
     def MdlRun(self,mdlflags,data=list()):
+        """
+        Add block specific code to the cyclic loop
+        Example: Access fieldbus data 
+        """
         pass
 
     def addToList(self, data, value):

@@ -69,6 +69,8 @@ class RCPblk:
 
         self.MdlDeclerations(codedata['MdlFlags'],codedata['MdlDeclerations'])
 
+        self.MdlDeclerationsFinal(codedata['MdlFlags'],codedata['MdlDeclerationsFinal'])
+
         self.MdlFunctions(codedata['MdlFlags'],codedata['MdlFunctions'])
 
         self.MdlStart(codedata['MdlFlags'],codedata['MdlStart'])
@@ -124,6 +126,13 @@ class RCPblk:
         Declare global data variables
         """
         pass
+
+    def MdlDeclerationsFinal(self,mdlflags,data=list()):
+        """
+        Declare global data variables which depend on other global vars
+        """
+        pass
+
 
     def MdlFunctions(self,mdlflags,data=dict()):
         """

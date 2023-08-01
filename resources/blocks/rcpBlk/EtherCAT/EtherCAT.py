@@ -27,7 +27,7 @@ class EtherCATBlk(RCPblk):
 
             mdlflags["ETHERCAT_MASTER_DATA_PTR"]=True
 
-    def setMaster(self, masterid)
+    def setMaster(self, masterid):
         self.master_id = masterid
 
     def setAlias(self,alias):

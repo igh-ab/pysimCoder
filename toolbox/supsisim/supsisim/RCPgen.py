@@ -118,23 +118,18 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
     for blk in Blocks:
         totContBlk += blk.nx[0]
 
+    f.write("\n/*Block global declerations*/\n")
+    for line in codedata['MdlDeclerations']:
+        f.write(line)
+
+    for line in codedata['MdlDeclerationsFinal']:
+        f.write(line)
+
 
     f.write("\n/*Block defined functions*/\n")
     for func in codedata['MdlFunctions']:
         f.write(codedata['MdlFunctions'][func]+"\n")
 
-
-    # f.write("/* Function prototypes */\n\n")
-
-    # prototypes = []
-    
-    # for blk in Blocks:
-    #     prototypes.append("void " + blk.fcn + "(int Flag, python_block *block);\n")
-    # setProto = set(prototypes)
-    # for el in setProto:
-    #     f.write(el)
-
-    # f.write("\n")
 
     strLn = "double " + model + "_get_tsamp(void)\n"
     strLn += "{\n"
@@ -144,6 +139,14 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
 
     strLn = "python_block block_" + model + "[" + str(N) + "];\n\n"
     f.write(strLn)
+
+    strLn = "/* Add named pointers to block structure*/\n"
+    for n in range(0,N):
+        blk = Blocks[n]    
+        strLn += "python_block *"+blk.getBlockCStruct()+" = &block_" + model + "[" + str(n) + "];\n"
+    f.write(strLn)
+    f.write("\n")
+
 
     for n in range(0,N):
         blk = Blocks[n]
@@ -303,6 +306,14 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
         blk = Blocks[n]
         strLn = "  " + blk.fcn + "(CG_INIT, &block_" + model + "[" + str(n) + "]);\n"
         f.write(strLn)
+
+    f.write("\n/*Block start code*/\n")
+    for line in codedata['MdlStart']:
+        f.write("  "+line)
+
+    for line in codedata['MdlStartFinal']:
+        f.write("  "+line)
+
     f.write("}\n\n")
 
     f.write("/* ISR function */\n\n")
@@ -313,6 +324,13 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
     if (totContBlk != 0):
         f.write("int i;\n")
         f.write("double h;\n\n")
+
+    for line in codedata['MdlRunPre']:
+        f.write("  "+line)
+
+    for line in codedata['MdlRun']:
+        f.write("  "+line)
+
 
     for n in range(0,N):
         blk = Blocks[n]
@@ -353,6 +371,9 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
 
         f.write("  }\n")
 
+    for line in codedata['MdlRunPost']:
+        f.write("  "+line)
+
     f.write("}\n")
 
     f.write("/* Termination function */\n\n")
@@ -363,6 +384,10 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
 
     if environ["SHV_USED"] == "True":
         genSHVend(f, model)
+
+    for line in codedata['MdlRunPost']:
+        f.write("  "+line)
+
 
     for n in range(0,N):
         blk = Blocks[n]
@@ -395,7 +420,9 @@ def genMake(model, template, codedata, addObj = ''):
     mf = f.read()
     f.close()
     mf = mf.replace('$$MODEL$$',model)
+    addlibs = " ".join(codedata["MdlLibraries"])
     mf = mf.replace('$$ADD_FILES$$',addObj)
+    mf = mf.replace('$$ADD_LIBS$$',addlibs)
     f = open('Makefile','w')
     f.write(mf)
     f.close()

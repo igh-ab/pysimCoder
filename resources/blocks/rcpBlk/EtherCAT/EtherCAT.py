@@ -1,16 +1,12 @@
 from supsisim.RCPblk import RCPblk
-import re
 
 class EtherCATBlk(RCPblk):
-    self.slave_type = ""
-    self.vendor = -1
-    self.product = -1
-    self.master_id = -1
-    self.position = -1
-    self.alias = -1
-
-    def cleanName(self):
-        return re.sub(r'[^a-zA-Z0-9]', '', self.name)
+    slave_type = ""
+    vendor = -1
+    product = -1
+    master_id = -1
+    position = -1
+    alias = -1
 
     def setSlaveIdent(
         self,
@@ -33,8 +29,11 @@ class EtherCATBlk(RCPblk):
         self.alias = int(alias)
         self.position = int(position)
 
-    def addToDomainReg(self,mdlfags,entryindex,entrysubindex,offsetindex,offsetbitindex);
-        bitstr=offsetbitindex in not None?"&"+self.getSlaveBitOffsetIdent()+"["+str(offsetbitindex)+"]":"NULL"
+    def addToDomainReg(self,mdlflags,entryindex,entrysubindex,offsetindex,offsetbitindex):
+        if offsetbitindex is not None:
+            bitstr = "&"+self.getSlaveBitOffsetIdent()+"["+str(offsetbitindex)+"]"
+        else:
+            bitstr = "NULL"
         mdlflags["ETHERCAT_DOMAINREG"][self.master_id].append(
             "{"+str(self.alias)+","+
                 str(self.position)+","+
@@ -66,11 +65,23 @@ class EtherCATBlk(RCPblk):
     def MdlDeclerations(self,mdlflags,data):
         if not "ETHERCAT_MASTER_DATA_PTR" in mdlflags.keys():
             for id in mdlflags["ETHERCAT_MASTER_LIST"]:
-                self.addToList(data,"static ec_master_t *"+self.getMasterIdent(id)+"=NULL;")
-                self.addToList(data,"static ec_domain_t *"+self.getDomainIdent(id)+"=NULL;")
-                self.addToList(data,"static unit8_t *"+self.getDomainDataIdent(id)+"=NULL;")
+                data.append("static ec_master_t *"+self.getMasterIdent(id)+"=NULL;\n")
+                data.append("static ec_domain_t *"+self.getDomainIdent(id)+"=NULL;\n")
+                data.append("static uint8_t *"+self.getDomainDataIdent(id)+"=NULL;\n")
             mdlflags["ETHERCAT_MASTER_DATA_PTR"]=True
-        self.addToList(data,"static ec_slave_config_t *"+self.getSlaveConfigIdent()+" = NULL;\n"+
+        data.append("static ec_slave_config_t *"+self.getSlaveConfigIdent()+" = NULL;\n")
+
+    def MdlDeclerationsFinal(self,mdlflags,data):
+        if "ETHERCAT_DOMAINREG" in mdlflags.keys():
+            for id in mdlflags["ETHERCAT_DOMAINREG"].keys():
+                data.append("const static ec_pdo_entry_reg_t "+self.getDomainRegsIdent(id)+"[] = {\n")
+                n = len(mdlflags["ETHERCAT_DOMAINREG"][id])
+                for idx in range(0,n-1):
+                    entry = mdlflags["ETHERCAT_DOMAINREG"][id][idx]
+                    data.append(entry+",\n")
+                entry = mdlflags["ETHERCAT_DOMAINREG"][id][n-1]
+                data.append(entry+"\n")
+                data.append("};\n\n")
 
     def getMasterIdent(self,masterid):
         return "ethercat_master_"+str(masterid)
@@ -80,6 +91,9 @@ class EtherCATBlk(RCPblk):
 
     def getDomainDataIdent(self,masterid):
         return "ethercat_domain_data_ptr_"+str(masterid)
+
+    def getDomainRegsIdent(self,masterid):
+        return "ethercat_domain_regs_"+str(masterid)
 
     def getSlaveConfigIdent(self):
         return "ethercat_slave_config_"+self.cleanName()
@@ -93,6 +107,11 @@ class EtherCATBlk(RCPblk):
     def getSlaveBitOffsetIdent(self):
         return "ethercat_bit_offsets_"+self.cleanName()
 
+    def getDataOffset(self,idx):
+        return self.getDomainDataIdent(self.master_id)+"+"+self.getSlaveOffsetIdent()+"["+str(idx)+"]"
+
+    def getDataBitOffset(self,idx):
+        return self.getSlaveBitOffsetIdent()+"["+str(idx)+"]"
 
     def configPDOs(self,data):
         data.append(
@@ -101,11 +120,11 @@ class EtherCATBlk(RCPblk):
         "        "+str(self.alias)+", \n"+
         "        "+str(self.position)+", \n"+
         "        "+hex(self.vendor)+", \n"+
-        "        "+hex(self.product)+")) {\n"+
+        "        "+hex(self.product)+"))) {\n"+
         "       fprintf(stderr, \""+self.name+": Failed to get slave configuration.\\n\");\n"+
         "       return -1;\n"+ 
         "    }\n\n"+
-        "    if (ecrt_slave_config_pdos("+getSlaveConfigIdent()+", \n"+
+        "    if (ecrt_slave_config_pdos("+self.getSlaveConfigIdent()+", \n"+
         "            EC_END, "+self.getSlaveSyncIdent()+")) {\n"+
         "       fprintf(stderr, \""+self.name+": Failed to configure PDOs.\\n\");\n"+
         "       return -1;\n"+
@@ -115,35 +134,47 @@ class EtherCATBlk(RCPblk):
     def MdlEnd(self,mdlflags,data):
         if not "ETHERCAT_MASTER_END" in mdlflags.keys():
             for id in mdlflags["ETHERCAT_MASTER_LIST"]:
-                self.addToList(data,f"ecrt_release_master({self.getMasterIdent(id)});")
+                data.append(f"ecrt_release_master({self.getMasterIdent(id)});\n")
             mdlflags["ETHERCAT_MASTER_END"]=True
 
     def MdlStart(self,mdlflags,data):
         if not "ETHERCAT_MASTER_START" in mdlflags.keys():
             for id in mdlflags["ETHERCAT_MASTER_LIST"]:
-                self.addToList(data,f"{self.getMasterIdent(id)} = ecrt_request_master({id});")
-                self.addToList(data,"if (!"+sel.getMasterIdent(id)+") {fprintf(stderr,\"Failed to request master.\");return -1;}")
-                self.addToList(data,f"{self.getDomainIdent(id)} = ecrt_master_create_domain({self.getMasterIdent(id)});")
-                self.addToList(data,"if (!"+self.getDomainIdent(id)+") {fprintf(stderr,\"Failed to create domain.\");return -1;}")
+                data.append(f"{self.getMasterIdent(id)} = ecrt_request_master({id});\n")
+                data.append("if (!"+self.getMasterIdent(id)+") {fprintf(stderr,\"Failed to request master.\");return -1;}\n")
+                data.append(f"{self.getDomainIdent(id)} = ecrt_master_create_domain({self.getMasterIdent(id)});\n")
+                data.append("if (!"+self.getDomainIdent(id)+") {fprintf(stderr,\"Failed to create domain.\");return -1;}\n")
             mdlflags["ETHERCAT_MASTER_START"]=True
 
     def MdlStartFinal(self,mdlflags,data):
         if not "ETHERCAT_MASTER_START_FINAL" in mdlflags.keys():
+            if "ETHERCAT_DOMAINREG" in mdlflags.keys():
+                for id in mdlflags["ETHERCAT_DOMAINREG"].keys():
+                    data.append("if (ecrt_domain_reg_pdo_entry_list("+self.getDomainIdent(id)+", "+self.getDomainRegsIdent(id)+")) {\n")
+                    data.append("    fprintf(stderr, \"PDO entry registration failed!\\n\");\n")
+                    data.append("    return -1;\n")
+                    data.append("}\n\n")
+
             for id in mdlflags["ETHERCAT_MASTER_LIST"]:
-                self.addToList(data,"if (ecrt_master_activate("+self.getMasterIdent(id)+")){fprintf(stderr,\"Failed to activate master.\")return -1;}")
-                self.addToList(data,f"if (!({self.getDomainDataIdent(id)} = ecrt_domain_data({self.getDomainIdent(id)}))){return -1;}")
+                data.append("if (ecrt_master_activate("+self.getMasterIdent(id)+")){\n")
+                data.append("    fprintf(stderr,\"Failed to activate master.\");\n")
+                data.append("    return -1;\n")
+                data.append("}\n\n")
+                data.append("if (!("+self.getDomainDataIdent(id)+" = ecrt_domain_data("+self.getDomainIdent(id)+"))){\n")
+                data.append("    return -1;\n")
+                data.append("}\n\n")
             mdlflags["ETHERCAT_MASTER_START_FINAL"]=True
 
     def MdlRunPre(self,mdlflags,data):
         if not "ETHERCAT_MASTER_RUN_PRE" in mdlflags.keys():
             for id in mdlflags["ETHERCAT_MASTER_LIST"]:
-                self.addToList(data,f"ecrt_master_receive({self.getMasterIdent(id)});")
-                self.addToList(data,f"ecrt_domain_process({self.getDomainIdent(id)});")
+                data.append(f"ecrt_master_receive({self.getMasterIdent(id)});\n")
+                data.append(f"ecrt_domain_process({self.getDomainIdent(id)});\n")
             mdlflags["ETHERCAT_MASTER_RUN_PRE"]=True
 
     def MdlRunPost(self,mdlflags,data):
         if not "ETHERCAT_MASTER_RUN_POST" in mdlflags.keys():
             for id in mdlflags["ETHERCAT_MASTER_LIST"]:
-                self.addToList(data,f"ecrt_domain_queque({self.getDomainIdent(id)});")
-                self.addToList(data,f"ecrt_master_send({self.getMasterIdent(id)});")
+                data.append(f"ecrt_domain_queue({self.getDomainIdent(id)});\n")
+                data.append(f"ecrt_master_send({self.getMasterIdent(id)});\n")
             mdlflags["ETHERCAT_MASTER_RUN_POST"]=True

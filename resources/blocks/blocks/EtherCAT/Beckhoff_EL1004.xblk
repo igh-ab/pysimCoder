@@ -1,0 +1,11 @@
+{
+  "lib": "EtherCAT",
+  "name": "Beckhoff_EL1004",
+  "ip": 0,
+  "op": 4,
+  "stin": 0,
+  "stout": 0,
+  "icon": "EtherCAT",
+  "params": "beckhoff_el1004_blk|Master: 0: int|Alias: 0: int|Position: 0: int",
+  "help": "This block implements a EtherCat EL1004\n4 channel digital input device"
+}

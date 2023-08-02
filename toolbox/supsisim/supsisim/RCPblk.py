@@ -9,6 +9,7 @@ The following class is provided:
 
 """
 from numpy import array, ones
+import re
 
 class RCPblk:
     def __init__(self, *args):  
@@ -136,7 +137,7 @@ class RCPblk:
 
     def MdlFunctions(self,mdlflags,data=dict()):
         """
-        Declare cyclic function call
+        Declare cyclic function call, old code generation style
         """
         pass
 
@@ -183,7 +184,26 @@ class RCPblk:
         pass
 
     def addToList(self, data, value):
+        """
+        Add to data list, but check value already exists
+        """
         if value in data:
             return
         else:
             data.append(value)
+
+    def cleanName(self):
+        """
+        Return a c clean blockname
+        """
+        return re.sub(r'[^a-zA-Z0-9_]', '', self.name)
+
+    def getBlockCStruct(self):
+        """
+        Return the pointer to the named point to the python block structure
+        """
+        return "block_"+self.cleanName()
+
+
+    def getBlockOutputPtr(self,idx):
+        return self.getBlockCStruct()+"->y["+str(idx)+"]"   

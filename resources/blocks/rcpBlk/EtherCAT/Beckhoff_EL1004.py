@@ -7,34 +7,44 @@ class Beckhoff_EL1004_Blk(EtherCATBlk):
     def MdlDeclerations(self,mdlflags,data):
         super().MdlDeclerations(mdlflags,data)
         data.append(
-        "static ec_pdo_entry_info_t "+self.cleanName()+"}_el1004_pdo_entries[] = {\n"+
+        "static ec_pdo_entry_info_t "+self.cleanName()+"_el1004_pdo_entries[] = {\n"+
         "{0x3101, 1, 1}, // channel 1 value\n"+
         "{0x3102, 1, 1}, // channel 2 value\n"+
         "{0x3103, 1, 1}, // channel 3 value\n"+
         "{0x3104, 1, 1}, // channel 4 value\n"+
-        "};")
+        "};\n")
         data.append(
         "static ec_pdo_info_t "+self.cleanName()+"_el1004_pdos[] = {\n"+
         "{0x1A00, 4, "+self.cleanName()+"_el1004_pdo_entries},\n"+
-        "};")
+        "};\n")
         data.append(
-        "static ec_sync_info_t "+self.getSlaveSyncIdent()+"[] = {\n+
+        "static ec_sync_info_t "+self.getSlaveSyncIdent()+"[] = {\n"+
         "{2, EC_DIR_OUTPUT},\n"+
         "{3, EC_DIR_INPUT, 2, "+self.cleanName()+"_el1004_pdos},\n"+
         "{0xff}\n"+
-        "};")
-        self.addToList(data,"static unsigned int "+self.getSlaveOffsetIdent()+"[4];")
-        self.addToList(data,"static unsigned int "+self.getSlaveBitOffsetIdent()+"[4];")
+        "};\n\n")
+        data.append("static unsigned int "+self.getSlaveOffsetIdent()+"[4];\n")
+        data.append("static unsigned int "+self.getSlaveBitOffsetIdent()+"[4];\n")
 
-
-    def MdlDeclerationsFinal(self,mdlflags,data):
-
+        self.addToDomainReg(mdlflags,0x3101,1,0,None)
+        self.addToDomainReg(mdlflags,0x3102,1,1,None)
+        self.addToDomainReg(mdlflags,0x3103,1,2,None)
+        self.addToDomainReg(mdlflags,0x3104,1,3,None)
 
     def MdlStart(self,mdlflags,data):
         super().MdlStart(mdlflags,data)
         self.configPDOs(data)
 
+    def MdlStartFinal(self,mdlflags,data):
+        super().MdlStartFinal(mdlflags,data)
+        for idx in range(0,4):
+            data.append("((double*)"+self.getBlockOutputPtr(idx)+")[0] = 0.0;\n")
+
+
     def MdlFunctions(self,mdlflags,data):
+        """
+        Not needed, but keep it to be compatible with old code generator
+        """
         if 'beckhoff_el1004' in data:
             return
         data['beckhoff_el1004']="""
@@ -43,12 +53,19 @@ class Beckhoff_EL1004_Blk(EtherCATBlk):
         }
         """
 
+    def MdlRun(self,mdlfags, data):
+        for idx in range(0,4):
+            data.append(
+                "((double*)"+self.getBlockOutputPtr(idx)+")[0] = (double)EC_READ_BIT("+
+                self.getDataOffset(idx)+", "+
+                self.getDataBitOffset(idx)+");\n")        
+
 
 def beckhoff_el1004_blk(pout,masterid,alias,position):
     
     if(size(pout) != 4):
         raise ValueError("Block should have 4 output port; received %i." % size(pout))
-    blk = Beckhoff_EL1004_Blk('beckhoff_el1004',[],pout,[],[],[],[])
+    blk = Beckhoff_EL1004_Blk('beckhoff_el1004',[],pout,[0,0],[],[],[])
     blk.setSlaveIdent('Beckhoff_EL1004',0x2,0x001,masterid,alias,position)
     return blk
 

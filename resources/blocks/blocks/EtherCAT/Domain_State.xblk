@@ -1,0 +1,11 @@
+{
+  "lib": "EtherCAT",
+  "name": "Domain_State",
+  "ip": 0,
+  "op": 3,
+  "stin": 0,
+  "stout": 0,
+  "icon": "EtherCAT",
+  "params": "ethercat_domain_state_blk|Master: 0: int",
+  "help": "This block implements Domain state block\nOutput 0 = working_counter\nOutput 1 ? wc_state\nOutput 2 = redundancy link active"
+}

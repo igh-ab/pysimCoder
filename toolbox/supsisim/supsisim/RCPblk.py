@@ -35,6 +35,7 @@ class RCPblk:
         self.intParNames = []
         self.str = str
         self.sysPath = ''
+        self.no_fcn_call = False
 
     def __str__(self):
         """String representation of the Block"""
@@ -54,37 +55,41 @@ class RCPblk:
         str += "String Parameter   : " + self.str.__str__() + "\n"
         return str
 
-    def genCode(self,codedata):
+    def genCode(self,codedata,cstate):
 
-        self.MdlFlags(codedata['MdlFlags'])
+        data = codedata[cstate]
+        mdlflags = codedata['MdlFlags']
 
-        self.MdlCFlags(codedata['MdlFlags'],codedata['MdlCFlags'])
-
-        self.MdlLibraries(codedata['MdlFlags'],codedata['MdlLibraries'])
-
-        self.MdlCFiles(codedata['MdlFlags'],codedata['MdlCFiles'])
-
-        self.MdlIncludes(codedata['MdlFlags'],codedata['MdlIncludes'])
-
-        self.MdlPredefines(codedata['MdlFlags'],codedata['MdlPredefines'])
-
-        self.MdlDeclerations(codedata['MdlFlags'],codedata['MdlDeclerations'])
-
-        self.MdlDeclerationsFinal(codedata['MdlFlags'],codedata['MdlDeclerationsFinal'])
-
-        self.MdlFunctions(codedata['MdlFlags'],codedata['MdlFunctions'])
-
-        self.MdlStart(codedata['MdlFlags'],codedata['MdlStart'])
-
-        self.MdlStartFinal(codedata['MdlFlags'],codedata['MdlStartFinal'])
-
-        self.MdlEnd(codedata['MdlFlags'],codedata['MdlEnd'])
-
-        self.MdlRunPre(codedata['MdlFlags'],codedata['MdlRunPre'])
-
-        self.MdlRunPost(codedata['MdlFlags'],codedata['MdlRunPost'])
-
-        self.MdlRun(codedata['MdlFlags'],codedata['MdlRun'])
+        if cstate == 'MdlFlags':
+            self.MdlFlags(data)
+        elif cstate == 'MdlCFlags':
+            self.MdlCFlags(mdlflags,data)
+        elif cstate == 'MdlLibraries':
+            self.MdlLibraries(mdlflags,data)
+        elif cstate == 'MdlCFiles':
+            self.MdlCFiles(mdlflags,data)
+        elif cstate == 'MdlIncludes':
+            self.MdlIncludes(mdlflags,data)
+        elif cstate == 'MdlPredefines':
+            self.MdlPredefines(mdlflags,data)
+        elif cstate == 'MdlDeclerations':
+            self.MdlDeclerations(mdlflags,data)
+        elif cstate == 'MdlDeclerationsFinal':
+            self.MdlDeclerationsFinal(mdlflags,data)
+        elif cstate == 'MdlFunctions':
+            self.MdlFunctions(mdlflags,data)
+        elif cstate == 'MdlStart':
+            self.MdlStart(mdlflags,data)
+        elif cstate == 'MdlStartFinal':
+            self.MdlStartFinal(mdlflags,data)
+        elif cstate == 'MdlEnd':
+            self.MdlEnd(mdlflags,data)
+        elif cstate == 'MdlRunPre':
+            self.MdlRunPre(mdlflags,data)
+        elif cstate == 'MdlRunPost':
+            self.MdlRunPost(mdlflags,data)
+        elif cstate == 'MdlRun':
+            self.MdlRun(mdlflags,data)
 
     def MdlFlags(self,data=dict()):
         """
@@ -192,6 +197,12 @@ class RCPblk:
         else:
             data.append(value)
 
+    def disableFunctionCall(self):
+        self.no_fcn_call = True
+
+    def isDisabledFunctionCall(self):
+        return self.no_fcn_call
+        
     def cleanName(self):
         """
         Return a c clean blockname
@@ -206,4 +217,4 @@ class RCPblk:
 
 
     def getBlockOutputPtr(self,idx):
-        return self.getBlockCStruct()+"->y["+str(idx)+"]"   
+        return self.getBlockCStruct()+"->y["+str(idx)+"]"

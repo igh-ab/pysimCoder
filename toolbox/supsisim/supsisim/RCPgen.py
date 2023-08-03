@@ -86,9 +86,10 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
 
     codedata = initCodeData()
 
-    for n in range(0,N):
-        blk = Blocks[n]
-        blk.genCode(codedata)
+    for cstate in codedata.keys():
+        for n in range(0,N):
+            blk = Blocks[n]
+            blk.genCode(codedata,cstate)
 
 
     fn = model + '.c'
@@ -304,8 +305,9 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
 
     for n in range(0,N):
         blk = Blocks[n]
-        strLn = "  " + blk.fcn + "(CG_INIT, &block_" + model + "[" + str(n) + "]);\n"
-        f.write(strLn)
+        if not blk.isDisabledFunctionCall():
+            strLn = "  " + blk.fcn + "(CG_INIT, &block_" + model + "[" + str(n) + "]);\n"
+            f.write(strLn)
 
     f.write("\n/*Block start code*/\n")
     for line in codedata['MdlStart']:
@@ -334,8 +336,9 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
 
     for n in range(0,N):
         blk = Blocks[n]
-        strLn = "  " + blk.fcn + "(CG_OUT, &block_" + model + "[" + str(n) + "]);\n"
-        f.write(strLn)
+        if not blk.isDisabledFunctionCall():
+            strLn = "  " + blk.fcn + "(CG_OUT, &block_" + model + "[" + str(n) + "]);\n"
+            f.write(strLn)
     f.write("\n")
 
     for n in range(0,N):
@@ -351,6 +354,8 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
 
         for n in range(0,N):
             blk = Blocks[n]
+            if blk.isDisabledFunctionCall():
+                continue
             if (blk.nx[0] != 0):
                 strLn = "  block_" + model + "[" + str(n) + "].realPar[0] = h;\n"
                 f.write(strLn)
@@ -359,12 +364,16 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
         f.write(strLn)
         for n in range(0,N):
             blk = Blocks[n]
+            if blk.isDisabledFunctionCall():
+                continue
             if (blk.nx[0] != 0):
                 strLn = "    " + blk.fcn + "(CG_OUT, &block_" + model + "[" + str(n) + "]);\n"
                 f.write(strLn)
 
         for n in range(0,N):
             blk = Blocks[n]
+            if blk.isDisabledFunctionCall():
+                continue
             if (blk.nx[0] != 0):
                 strLn = "    " + blk.fcn + "(CG_STUPD, &block_" + model + "[" + str(n) + "]);\n"
                 f.write(strLn)
@@ -391,6 +400,8 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
 
     for n in range(0,N):
         blk = Blocks[n]
+        if blk.isDisabledFunctionCall():
+            continue
         strLn = "  " + blk.fcn + "(CG_END, &block_" + model + "[" + str(n) + "]);\n"
         f.write(strLn)
     f.write("}\n\n")

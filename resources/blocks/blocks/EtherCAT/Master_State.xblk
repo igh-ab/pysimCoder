@@ -1,0 +1,11 @@
+{
+  "lib": "EtherCAT",
+  "name": "Master_State",
+  "ip": 0,
+  "op": 3,
+  "stin": 0,
+  "stout": 0,
+  "icon": "EtherCAT",
+  "params": "ethercat_master_state_blk|Master: 0: int",
+  "help": "This block implements Master state block\nOutput 0 = slaves_responding\nOutput 1 ? al_states\nOutput 2 = link_up"
+}

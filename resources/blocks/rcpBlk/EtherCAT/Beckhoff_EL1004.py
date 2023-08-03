@@ -4,14 +4,13 @@ from EtherCAT.EtherCAT import EtherCATBlk
 
 class Beckhoff_EL1004_Blk(EtherCATBlk):
 
-    def MdlDeclerations(self,mdlflags,data):
-        super().MdlDeclerations(mdlflags,data)
+    def MdlBlockDeclerations(self,mdlflags,data):
         data.append(
         "static ec_pdo_entry_info_t "+self.cleanName()+"_el1004_pdo_entries[] = {\n"+
-        "{0x3101, 1, 1}, // channel 1 value\n"+
-        "{0x3102, 1, 1}, // channel 2 value\n"+
-        "{0x3103, 1, 1}, // channel 3 value\n"+
-        "{0x3104, 1, 1}, // channel 4 value\n"+
+        "{0x3101, 1, 8}, // channel 1 value\n"+
+        "{0x3102, 1, 8}, // channel 2 value\n"+
+        "{0x3103, 1, 8}, // channel 3 value\n"+
+        "{0x3104, 1, 8}, // channel 4 value\n"+
         "};\n")
         data.append(
         "static ec_pdo_info_t "+self.cleanName()+"_el1004_pdos[] = {\n"+
@@ -23,37 +22,23 @@ class Beckhoff_EL1004_Blk(EtherCATBlk):
         "{3, EC_DIR_INPUT, 2, "+self.cleanName()+"_el1004_pdos},\n"+
         "{0xff}\n"+
         "};\n\n")
+        data.append("static ec_slave_config_t *"+self.getSlaveConfigIdent()+" = NULL;\n")
         data.append("static unsigned int "+self.getSlaveOffsetIdent()+"[4];\n")
         data.append("static unsigned int "+self.getSlaveBitOffsetIdent()+"[4];\n")
 
-        self.addToDomainReg(mdlflags,0x3101,1,0,None)
-        self.addToDomainReg(mdlflags,0x3102,1,1,None)
-        self.addToDomainReg(mdlflags,0x3103,1,2,None)
-        self.addToDomainReg(mdlflags,0x3104,1,3,None)
+        self.addToDomainReg(mdlflags,0x3101,1,0,0)
+        self.addToDomainReg(mdlflags,0x3102,1,1,1)
+        self.addToDomainReg(mdlflags,0x3103,1,2,2)
+        self.addToDomainReg(mdlflags,0x3104,1,3,3)
 
-    def MdlStart(self,mdlflags,data):
-        super().MdlStart(mdlflags,data)
+    def MdlBlockStart(self,mdlflags,data):
         self.configPDOs(data)
 
-    def MdlStartFinal(self,mdlflags,data):
-        super().MdlStartFinal(mdlflags,data)
+    def MdlBlockStartFinal(self,mdlflags,data):
         for idx in range(0,4):
             data.append("((double*)"+self.getBlockOutputPtr(idx)+")[0] = 0.0;\n")
 
-
-    def MdlFunctions(self,mdlflags,data):
-        """
-        Not needed, but keep it to be compatible with old code generator
-        """
-        if 'beckhoff_el1004' in data:
-            return
-        data['beckhoff_el1004']="""
-        void beckhoff_el1004(int Flag, python_block *block)
-        {
-        }
-        """
-
-    def MdlRun(self,mdlfags, data):
+    def MdlBlockRun(self,mdlfags, data):
         for idx in range(0,4):
             data.append(
                 "((double*)"+self.getBlockOutputPtr(idx)+")[0] = (double)EC_READ_BIT("+

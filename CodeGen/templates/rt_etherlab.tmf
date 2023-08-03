@@ -32,7 +32,7 @@ $(MAIN).c: $(MAINDIR)/$(MAIN).c $(MODEL).c
 	$(CC) -c -o $@ $(CFLAGS) $<
 
 ../$(MODEL): $(OBJSSTAN) $(LIB)
-	$(CC) -o $@  $(OBJSSTAN) $(LIB) -lrt -lpthread -lm -lpdserv
+	$(CC) -o $@  $(OBJSSTAN) $(LIB) -lrt -lpthread -lm -lpdserv $$ADD_LIBS$$
 	@echo "### Created executable: $(MODEL)"
 
 clean:

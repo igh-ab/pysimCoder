@@ -78,12 +78,16 @@ class RCPblk:
             self.MdlDeclerationsFinal(mdlflags,data)
         elif cstate == 'MdlFunctions':
             self.MdlFunctions(mdlflags,data)
+        elif cstate == 'MdlStartPre':
+            self.MdlStartPre(mdlflags,data)
         elif cstate == 'MdlStart':
             self.MdlStart(mdlflags,data)
         elif cstate == 'MdlStartFinal':
             self.MdlStartFinal(mdlflags,data)
         elif cstate == 'MdlEnd':
             self.MdlEnd(mdlflags,data)
+        elif cstate == 'MdlEndFinal':
+            self.MdlEndFinal(mdlflags,data)
         elif cstate == 'MdlRunPre':
             self.MdlRunPre(mdlflags,data)
         elif cstate == 'MdlRunPost':
@@ -146,42 +150,57 @@ class RCPblk:
         """
         pass
 
-    def MdlStart(self,mdlflags,data=list()):
+    def MdlStartPre(self,mdlflags,data=dict()):
+        """
+        Initial gloabl infrastructure
+        Example: Configure fieldbus
+        """
+        pass
+
+    def MdlStart(self,mdlflags,data=dict()):
         """
         Initial function calls
         Example: Configure fieldbus
         """
         pass
 
-    def MdlStartFinal(self,mdlflags,data=list()):
+    def MdlStartFinal(self,mdlflags,data=dict()):
         """
         Final code directly before going into cyclic mode
         Example: Activate fieldbus configuration
         """
         pass
 
-    def MdlEnd(self,mdlflags,data=list()):
+    def MdlEnd(self,mdlflags,data=dict()):
         """
         Add code to model end section
-        Example: Release fieldbus
+        Example: Release block dependend data
         """
         pass
 
-    def MdlRunPre(self,mdlflags,data=list()):
+    def MdlEndFinal(self,mdlflags,data=dict()):
+        """
+        Add code to model end final section
+        Example: Release global subsystems
+        """
+        pass
+
+
+    def MdlRunPre(self,mdlflags,data=dict()):
         """
         Add code at beginning of cyclic loop
         Example: Recieve fieldbus data
         """
         pass
 
-    def MdlRunPost(self,mdlflags,data=list()):
+    def MdlRunPost(self,mdlflags,data=dict()):
         """
         Add code to the end of cyclic loop
         Example: Send fieldbus data
         """
         pass
 
-    def MdlRun(self,mdlflags,data=list()):
+    def MdlRun(self,mdlflags,data=dict()):
         """
         Add block specific code to the cyclic loop
         Example: Access fieldbus data 
@@ -197,12 +216,35 @@ class RCPblk:
         else:
             data.append(value)
 
+    def addCode(self,data,value):
+        """
+        Add to data dict,
+        key is the block name,
+        values ares stored under
+        data[blockname].list
+        """
+        if not self.cleanName() in data.keys():
+            data[self.cleanName()] = list()
+        data[self.cleanName()].append(value)
+
+    def getCode(self,data):
+        if self.cleanName() in data.keys():
+            return data[self.cleanName()]
+        else:
+            return list()
+
+
+    def addFunction(self,data,ident,value):
+        if ident in data.keys():
+            return
+        data[ident]=value
+
     def disableFunctionCall(self):
         self.no_fcn_call = True
 
     def isDisabledFunctionCall(self):
         return self.no_fcn_call
-        
+
     def cleanName(self):
         """
         Return a c clean blockname

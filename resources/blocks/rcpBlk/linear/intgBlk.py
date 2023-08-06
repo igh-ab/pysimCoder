@@ -1,6 +1,37 @@
 from supsisim.RCPblk import RCPblk
 from scipy import size
 
+class IntegralBlk(RCPblk):
+
+    def MdlFunctions(self,mdlflags,data):
+        self.addFunction(data,'integral',"""
+        void integral(int Flag, python_block *block)
+        {
+            double * realPar = block->realPar;
+            double *y;
+
+            double h = realPar[0];
+            double *U = block->u[0];
+
+            switch(Flag){
+            case CG_OUT:
+                y = (double *) block->y[0];
+                y[0] = realPar[1];
+                break;
+
+            case CG_STUPD:
+                /* Runga Kutta */
+                realPar[1] = realPar[1] + U[0]*h;
+                break;
+            case CG_INIT:
+            case CG_END:
+                break;
+            default:
+                break;
+            }
+        }
+        """)
+
 def intgBlk(pin,pout,X0=0.0):
     """ 
 
@@ -28,6 +59,6 @@ def intgBlk(pin,pout,X0=0.0):
     if(nout != 1):
         raise ValueError("Block have 1 output1: received %i output ports" % nout)
         
-    blk = RCPblk('integral',pin,pout,[1,0],0,[0.0 ,X0],[])
+    blk = IntegralBlk('integral',pin,pout,[1,0],0,[0.0 ,X0],[])
     return blk
 

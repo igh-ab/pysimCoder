@@ -9,9 +9,7 @@ class MatMultBlk(RCPblk):
 
     def MdlFunctions(self,mdlflags,data):
         addMatMult(mdlflags,data)
-        if 'mxmult' in data:
-            return
-        data['mxmult']="""
+        self.addFunction(data,'mxmult',"""
         void mxmult(int Flag, python_block *block)
         {
 
@@ -46,7 +44,7 @@ class MatMultBlk(RCPblk):
                 break;
             }
         }
-        """
+        """)
 
 def matmultBlk(pin, pout, Gains):
     """

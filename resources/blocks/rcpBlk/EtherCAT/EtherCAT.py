@@ -98,15 +98,24 @@ class EtherCATBlk(RCPblk):
         self.addToList(data,'-lethercat')
         self.MdlBlockLibraries(mdlflags,data)
 
+    def MdlBlockPredefines(self,mdlflags,data):
+        pass
+
+    def MdlPredefines(self,mdlflags,data):
+        if not "ETHERCAT_MASTER_PREDEFINES" in mdlflags.keys():
+            self.addToList(data,"#define ETHERCAT_TIMESPEC2NS(T) ((uint64_t) (T).tv_sec * (1000000000L) + (T).tv_nsec)")
+            mdlflags["ETHERCAT_MASTER_PREDEFINES"]=True
+        self.MdlBlockPredefines(mdlflags,data)
+
     def MdlBlockDeclerations(self,mdlflags,data):
         pass
 
     def MdlDeclerations(self,mdlflags,data):
         if not "ETHERCAT_MASTER_DATA_PTR" in mdlflags.keys():
             for id in mdlflags["ETHERCAT_MASTER_LIST"]:
-                data.append("static ec_master_t *"+self.getMasterIdent(id)+"=NULL;\n")
-                data.append("static ec_domain_t *"+self.getDomainIdent(id)+"=NULL;\n")
-                data.append("static uint8_t *"+self.getDomainDataIdent(id)+"=NULL;\n")
+                self.addCode(data,"static ec_master_t *"+self.getMasterIdent(id)+"=NULL;\n")
+                self.addCode(data,"static ec_domain_t *"+self.getDomainIdent(id)+"=NULL;\n")
+                self.addCode(data,"static uint8_t *"+self.getDomainDataIdent(id)+"=NULL;\n")
             mdlflags["ETHERCAT_MASTER_DATA_PTR"]=True
         self.MdlBlockDeclerations(mdlflags,data)
 
@@ -117,40 +126,40 @@ class EtherCATBlk(RCPblk):
         if not "ETHERCAT_DOMAINREG_DONE" in mdlflags.keys():
             if "ETHERCAT_DOMAINREG" in mdlflags.keys():
                 for id in mdlflags["ETHERCAT_DOMAINREG"].keys():
-                    data.append("const static ec_pdo_entry_reg_t "+self.getDomainRegsIdent(id)+"[] = {\n")
+                    self.addCode(data,"const static ec_pdo_entry_reg_t "+self.getDomainRegsIdent(id)+"[] = {\n")
                     n = len(mdlflags["ETHERCAT_DOMAINREG"][id])
                     for idx in range(0,n-1):
                         entry = mdlflags["ETHERCAT_DOMAINREG"][id][idx]
-                        data.append(entry+",\n")
+                        self.addCode(data,entry+",\n")
                     entry = mdlflags["ETHERCAT_DOMAINREG"][id][n-1]
-                    data.append(entry+"\n")
-                    data.append("};\n\n")
+                    self.addCode(data,entry+"\n")
+                    self.addCode(data,"};\n\n")
             mdlflags["ETHERCAT_DOMAINREG_DONE"] = True
         self.MdlBlockDeclerationsFinal(mdlflags,data)
 
     def getMasterIdent(self,masterid):
-        return "ethercat_master_"+str(masterid)
+        return "mdl_ethercat_master_"+str(masterid)
 
     def getDomainIdent(self,masterid):
-        return "ethercat_domain_"+str(masterid)
+        return "mdl_ethercat_domain_"+str(masterid)
 
     def getDomainDataIdent(self,masterid):
-        return "ethercat_domain_data_ptr_"+str(masterid)
+        return "mdl_ethercat_domain_data_ptr_"+str(masterid)
 
     def getDomainRegsIdent(self,masterid):
-        return "ethercat_domain_regs_"+str(masterid)
+        return "mdl_ethercat_domain_regs_"+str(masterid)
 
     def getSlaveConfigIdent(self):
-        return "ethercat_slave_config_"+self.cleanName()
+        return "mdl_ethercat_slave_config_"+self.cleanName()
 
     def getSlaveSyncIdent(self):
-        return "ethercat_syncs_"+self.cleanName()
+        return "mdl_ethercat_syncs_"+self.cleanName()
 
     def getSlaveOffsetIdent(self):
-        return "ethercat_offsets_"+self.cleanName()
+        return "mdl_ethercat_offsets_"+self.cleanName()
 
     def getSlaveBitOffsetIdent(self):
-        return "ethercat_bit_offsets_"+self.cleanName()
+        return "mdl_ethercat_bit_offsets_"+self.cleanName()
 
     def getDataOffset(self,idx):
         return self.getDomainDataIdent(self.master_id)+"+"+self.getSlaveOffsetIdent()+"["+str(idx)+"]"
@@ -159,7 +168,7 @@ class EtherCATBlk(RCPblk):
         return self.getSlaveBitOffsetIdent()+"["+str(idx)+"]"
 
     def configPDOs(self,data):
-        data.append(
+        self.addCode(data,
         "    if (!("+self.getSlaveConfigIdent()+" = ecrt_master_slave_config(\n"+
         "        "+self.getMasterIdent(self.master_id)+", \n"+
         "        "+str(self.alias)+", \n"+
@@ -175,6 +184,9 @@ class EtherCATBlk(RCPblk):
         "       exit(0);\n"+
         "    }\n\n")
 
+    def configDC(self,data):
+            ecrt_slave_config_dc(sc, 0x0700, PERIOD_NS, 4400000, 0, 0);
+
     def MdlBlockFunctions(self,mdlflags,data):
         pass
 
@@ -185,11 +197,30 @@ class EtherCATBlk(RCPblk):
         pass
 
     def MdlEnd(self,mdlflags,data):
+        self.MdlBlockEnd(mdlflags,data)
+
+    def MdlBlockEndFinal(slef,mdlflags,data):
+        pass
+
+    def MdlEndFinal(self,mdlflags,data):
         if not "ETHERCAT_MASTER_END" in mdlflags.keys():
             for id in mdlflags["ETHERCAT_MASTER_LIST"]:
-                data.append(f"ecrt_release_master({self.getMasterIdent(id)});\n")
+                self.addCode(data,f"ecrt_release_master({self.getMasterIdent(id)});\n")
             mdlflags["ETHERCAT_MASTER_END"]=True
-        self.MdlBlockEnd(mdlflags,data)
+        self.MdlBlockEndFinal(mdlflags,data)
+
+    def MdlBlockStartPre(self,mdlflags,data):
+        pass
+
+    def MdlStartPre(self,mdlflags,data):
+        if not "ETHERCAT_MASTER_START" in mdlflags.keys():
+            for id in mdlflags["ETHERCAT_MASTER_LIST"]:
+                self.addCode(data,f"{self.getMasterIdent(id)} = ecrt_request_master({id});\n")
+                self.addCode(data,"if (!"+self.getMasterIdent(id)+") {fprintf(stderr,\"Failed to request master.\");exit(0);}\n")
+                self.addCode(data,f"{self.getDomainIdent(id)} = ecrt_master_create_domain({self.getMasterIdent(id)});\n")
+                self.addCode(data,"if (!"+self.getDomainIdent(id)+") {fprintf(stderr,\"Failed to create domain.\");exit(0);}\n")
+            mdlflags["ETHERCAT_MASTER_START"]=True
+        self.MdlBlockStartPre(mdlflags,data)
 
     def MdlBlockStart(self,mdlflags,data):
         pass
@@ -197,12 +228,13 @@ class EtherCATBlk(RCPblk):
     def MdlStart(self,mdlflags,data):
         if not "ETHERCAT_MASTER_START" in mdlflags.keys():
             for id in mdlflags["ETHERCAT_MASTER_LIST"]:
-                data.append(f"{self.getMasterIdent(id)} = ecrt_request_master({id});\n")
-                data.append("if (!"+self.getMasterIdent(id)+") {fprintf(stderr,\"Failed to request master.\");exit(0);}\n")
-                data.append(f"{self.getDomainIdent(id)} = ecrt_master_create_domain({self.getMasterIdent(id)});\n")
-                data.append("if (!"+self.getDomainIdent(id)+") {fprintf(stderr,\"Failed to create domain.\");exit(0);}\n")
+                self.addCode(data,f"{self.getMasterIdent(id)} = ecrt_request_master({id});\n")
+                self.addCode(data,"if (!"+self.getMasterIdent(id)+") {fprintf(stderr,\"Failed to request master.\");exit(0);}\n")
+                self.addCode(data,f"{self.getDomainIdent(id)} = ecrt_master_create_domain({self.getMasterIdent(id)});\n")
+                self.addCode(data,"if (!"+self.getDomainIdent(id)+") {fprintf(stderr,\"Failed to create domain.\");exit(0);}\n")
             mdlflags["ETHERCAT_MASTER_START"]=True
         self.MdlBlockStart(mdlflags,data)
+
 
     def MdlBlockStartFinal(self,mdlflags,data):
         pass
@@ -211,19 +243,19 @@ class EtherCATBlk(RCPblk):
         if not "ETHERCAT_MASTER_START_FINAL" in mdlflags.keys():
             if "ETHERCAT_DOMAINREG" in mdlflags.keys():
                 for id in mdlflags["ETHERCAT_DOMAINREG"].keys():
-                    data.append("if (ecrt_domain_reg_pdo_entry_list("+self.getDomainIdent(id)+", "+self.getDomainRegsIdent(id)+")) {\n")
-                    data.append("    fprintf(stderr, \"PDO entry registration failed!\\n\");\n")
-                    data.append("    exit(0);\n")
-                    data.append("}\n\n")
+                    self.addCode(data,"if (ecrt_domain_reg_pdo_entry_list("+self.getDomainIdent(id)+", "+self.getDomainRegsIdent(id)+")) {\n")
+                    self.addCode(data,"    fprintf(stderr, \"PDO entry registration failed!\\n\");\n")
+                    self.addCode(data,"    exit(0);\n")
+                    self.addCode(data,"}\n\n")
 
             for id in mdlflags["ETHERCAT_MASTER_LIST"]:
-                data.append("if (ecrt_master_activate("+self.getMasterIdent(id)+")){\n")
-                data.append("    fprintf(stderr,\"Failed to activate master.\");\n")
-                data.append("    exit(0);\n")
-                data.append("}\n\n")
-                data.append("if (!("+self.getDomainDataIdent(id)+" = ecrt_domain_data("+self.getDomainIdent(id)+"))){\n")
-                data.append("    exit(0);\n")
-                data.append("}\n\n")
+                self.addCode(data,"if (ecrt_master_activate("+self.getMasterIdent(id)+")){\n")
+                self.addCode(data,"    fprintf(stderr,\"Failed to activate master.\");\n")
+                self.addCode(data,"    exit(0);\n")
+                self.addCode(data,"}\n\n")
+                self.addCode(data,"if (!("+self.getDomainDataIdent(id)+" = ecrt_domain_data("+self.getDomainIdent(id)+"))){\n")
+                self.addCode(data,"    exit(0);\n")
+                self.addCode(data,"}\n\n")
             mdlflags["ETHERCAT_MASTER_START_FINAL"]=True
         self.MdlBlockStartFinal(mdlflags,data)
 
@@ -233,8 +265,9 @@ class EtherCATBlk(RCPblk):
     def MdlRunPre(self,mdlflags,data):
         if not "ETHERCAT_MASTER_RUN_PRE" in mdlflags.keys():
             for id in mdlflags["ETHERCAT_MASTER_LIST"]:
-                data.append(f"ecrt_master_receive({self.getMasterIdent(id)});\n")
-                data.append(f"ecrt_domain_process({self.getDomainIdent(id)});\n")
+                self.addCode(data,f"ecrt_master_application_time(({self.getMasterIdent(id)}, ETHERCAT_TIMESPEC2NS(monotonic_time));\n")
+                self.addCode(data,f"ecrt_master_receive({self.getMasterIdent(id)});\n")
+                self.addCode(data,f"ecrt_domain_process({self.getDomainIdent(id)});\n")
             mdlflags["ETHERCAT_MASTER_RUN_PRE"]=True
         self.MdlBlockRunPre(mdlflags,data)
 
@@ -250,8 +283,10 @@ class EtherCATBlk(RCPblk):
     def MdlRunPost(self,mdlflags,data):
         if not "ETHERCAT_MASTER_RUN_POST" in mdlflags.keys():
             for id in mdlflags["ETHERCAT_MASTER_LIST"]:
-                data.append(f"ecrt_domain_queue({self.getDomainIdent(id)});\n")
-                data.append(f"ecrt_master_send({self.getMasterIdent(id)});\n")
+                self.addCode(data,f"ecrt_master_sync_reference_clock_to({self.getMasterIdent(id)}, ETHERCAT_TIMESPEC2NS(monotonic_time));\n")
+                self.addCode(data,f"ecrt_master_sync_slave_clocks({self.getMasterIdent(id)});\n")
+                self.addCode(data,f"ecrt_domain_queue({self.getDomainIdent(id)});\n")
+                self.addCode(data,f"ecrt_master_send({self.getMasterIdent(id)});\n")
             mdlflags["ETHERCAT_MASTER_RUN_POST"]=True
         self.MdlBlockRunPost(mdlflags,data)
 

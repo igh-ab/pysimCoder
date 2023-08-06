@@ -31,15 +31,17 @@ def initCodeData():
     codedata['MdlCFiles'] = list()
     codedata['MdlIncludes'] = list()
     codedata['MdlPredefines'] = list()
-    codedata['MdlDeclerations'] = list()
-    codedata['MdlDeclerationsFinal'] = list()
+    codedata['MdlDeclerations'] = dict()
+    codedata['MdlDeclerationsFinal'] = dict()
     codedata['MdlFunctions'] = dict()
-    codedata['MdlStart'] = list()
-    codedata['MdlStartFinal'] = list()
-    codedata['MdlEnd'] = list()
-    codedata['MdlRunPre'] = list()
-    codedata['MdlRunPost'] = list()
-    codedata['MdlRun'] = list()
+    codedata['MdlStartPre'] = dict()
+    codedata['MdlStart'] = dict()
+    codedata['MdlStartFinal'] = dict()
+    codedata['MdlEnd'] = dict()
+    codedata['MdlEndFinal'] = dict()
+    codedata['MdlRunPre'] = dict()
+    codedata['MdlRunPost'] = dict()
+    codedata['MdlRun'] = dict()
     return codedata
 
 
@@ -119,12 +121,18 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
     for blk in Blocks:
         totContBlk += blk.nx[0]
 
-    f.write("\n/*Block global declerations*/\n")
-    for line in codedata['MdlDeclerations']:
-        f.write(line)
+    f.write("\nextern struct timespec monotonic_time;\n\n")
 
-    for line in codedata['MdlDeclerationsFinal']:
-        f.write(line)
+    f.write("\n/*Block global declerations*/\n")
+    for n in range(0,N):
+        blk = Blocks[n]    
+        for line in blk.getCode(codedata['MdlDeclerations']):
+            f.write(line)
+
+    for n in range(0,N):
+        blk = Blocks[n]    
+        for line in blk.getCode(codedata['MdlDeclerationsFinal']):
+            f.write(line)
 
 
     f.write("\n/*Block defined functions*/\n")
@@ -301,20 +309,33 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
     if environ["SHV_USED"] == "True":
         genSHVcode(f, model, Blocks, Blks)
 
-    f.write("/* Set initial outputs */\n\n")
+    f.write("\n\n/*  Start: Model pre start function code */\n")
+    for n in range(0,N):
+        blk = Blocks[n]
+        for line in blk.getCode(codedata['MdlStartPre']):
+            f.write("  "+line)
+    f.write("\n/* End: Model pre start function code */\n\n")
 
+
+    f.write("\n\n/* Start: Model start function code */\n")
     for n in range(0,N):
         blk = Blocks[n]
         if not blk.isDisabledFunctionCall():
             strLn = "  " + blk.fcn + "(CG_INIT, &block_" + model + "[" + str(n) + "]);\n"
             f.write(strLn)
+        else:
+            for line in blk.getCode(codedata['MdlStart']):
+                f.write("  "+line)
+    f.write("\n/* End: Model start function code */\n\n")
 
-    f.write("\n/*Block start code*/\n")
-    for line in codedata['MdlStart']:
-        f.write("  "+line)
 
-    for line in codedata['MdlStartFinal']:
-        f.write("  "+line)
+    f.write("\n\n/* Start: Model start final function code */\n")
+    for n in range(0,N):
+        blk = Blocks[n]
+        for line in blk.getCode(codedata['MdlStartFinal']):
+            f.write("  "+line)
+    f.write("\n/* End: Model start final function code */\n\n")
+
 
     f.write("}\n\n")
 
@@ -327,18 +348,26 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
         f.write("int i;\n")
         f.write("double h;\n\n")
 
-    for line in codedata['MdlRunPre']:
-        f.write("  "+line)
+    f.write("\n\n/* Start: Model pre run function code */\n")
+    for n in range(0,N):
+        blk = Blocks[n]
+        for line in blk.getCode(codedata['MdlRunPre']):
+            f.write("  "+line)
+    f.write("\n/* End: Model pre run function code */\n\n")
 
-    for line in codedata['MdlRun']:
-        f.write("  "+line)
 
-
+    f.write("\n\n/* Start: Model run function code */\n")
     for n in range(0,N):
         blk = Blocks[n]
         if not blk.isDisabledFunctionCall():
             strLn = "  " + blk.fcn + "(CG_OUT, &block_" + model + "[" + str(n) + "]);\n"
             f.write(strLn)
+        else:
+            for line in blk.getCode(codedata['MdlRun']):
+                f.write("  "+line)
+    f.write("\n/* End: Model run function code */\n\n")
+
+
     f.write("\n")
 
     for n in range(0,N):
@@ -348,6 +377,7 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
             f.write(strLn)
     f.write("\n")
 
+    f.write("\n\n/* Model subsampling run function code */\n")
     if (totContBlk != 0):
         strLn = "  h = " + model + "_get_tsamp()/" + str(rkstep) + ";\n\n"
         f.write(strLn)
@@ -380,8 +410,12 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
 
         f.write("  }\n")
 
-    for line in codedata['MdlRunPost']:
-        f.write("  "+line)
+    f.write("\n\n/* Start: Model post run function code */\n")
+    for n in range(0,N):
+        blk = Blocks[n]
+        for line in blk.getCode(codedata['MdlRunPost']):
+            f.write("  "+line)
+    f.write("\n/* End: Model post run function code */\n\n")
 
     f.write("}\n")
 
@@ -394,16 +428,26 @@ def genCode(model, Tsamp, blocks, rkstep = 10):
     if environ["SHV_USED"] == "True":
         genSHVend(f, model)
 
-    for line in codedata['MdlRunPost']:
-        f.write("  "+line)
-
-
+    f.write("\n\n/* Start: Model block end function code */\n")
     for n in range(0,N):
         blk = Blocks[n]
-        if blk.isDisabledFunctionCall():
-            continue
-        strLn = "  " + blk.fcn + "(CG_END, &block_" + model + "[" + str(n) + "]);\n"
-        f.write(strLn)
+        if not blk.isDisabledFunctionCall():
+            strLn = "  " + blk.fcn + "(CG_END, &block_" + model + "[" + str(n) + "]);\n"
+            f.write(strLn)
+        else:
+            for line in blk.getCode(codedata['MdlEnd']):
+                f.write("  "+line)
+    f.write("\n/* End: Model end function code */\n\n")
+
+
+    f.write("\n\n/* Start: Model end final function code */\n")
+    for n in range(0,N):
+        blk = Blocks[n]
+        for line in blk.getCode(codedata['MdlEndFinal']):
+            f.write("  "+line)
+    f.write("\n/* End: Model end final function code */\n\n")
+
+
     f.write("}\n\n")
     f.close()
 

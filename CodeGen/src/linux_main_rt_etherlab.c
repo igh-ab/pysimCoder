@@ -39,6 +39,7 @@ struct pdserv* pdserv;
 struct pdtask* pdtask;
 static double T = 0.0;
 static double Tsamp;
+struct timespec monotonic_time;
 
 /* Command-line option variables.  */
 
@@ -192,10 +193,10 @@ int main(int argc, char **argv)
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     double exec_time, cycle_time;
     unsigned int overruns = 0;
-    struct timespec monotonic_time, world_time;
+    struct timespec world_time;
     struct timespec start_time, stop_time = {0,0}, end_time, last_start_time;
     struct timespec t_current, T0;
- 
+    
     get_options(argc, argv);
 
     Tsamp = NAME(MODEL,_get_tsamp)();

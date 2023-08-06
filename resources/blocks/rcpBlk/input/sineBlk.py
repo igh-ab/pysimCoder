@@ -13,9 +13,7 @@ class SineBlk(RCPblk):
         self.addToList(data,'-lm')
 
     def MdlFunctions(self,mdlflags,data):
-        if 'sinus' in data:
-            return
-        data['sinus']="""
+        self.addFunction(data,'sinus',"""
         void sinus(int Flag, python_block *block)
         {
             double t;
@@ -47,7 +45,7 @@ class SineBlk(RCPblk):
                     break;
             }
         }
-        """
+        """)
 
 def sineBlk(pout, Amp, Freq, Phase, Bias, Delay):
     """

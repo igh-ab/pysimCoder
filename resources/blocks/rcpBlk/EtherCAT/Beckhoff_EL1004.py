@@ -5,26 +5,26 @@ from EtherCAT.EtherCAT import EtherCATBlk
 class Beckhoff_EL1004_Blk(EtherCATBlk):
 
     def MdlBlockDeclerations(self,mdlflags,data):
-        data.append(
+        self.addCode(data,
         "static ec_pdo_entry_info_t "+self.cleanName()+"_el1004_pdo_entries[] = {\n"+
         "{0x3101, 1, 8}, // channel 1 value\n"+
         "{0x3102, 1, 8}, // channel 2 value\n"+
         "{0x3103, 1, 8}, // channel 3 value\n"+
         "{0x3104, 1, 8}, // channel 4 value\n"+
         "};\n")
-        data.append(
+        self.addCode(data,
         "static ec_pdo_info_t "+self.cleanName()+"_el1004_pdos[] = {\n"+
         "{0x1A00, 4, "+self.cleanName()+"_el1004_pdo_entries},\n"+
         "};\n")
-        data.append(
+        self.addCode(data,
         "static ec_sync_info_t "+self.getSlaveSyncIdent()+"[] = {\n"+
         "{2, EC_DIR_OUTPUT},\n"+
         "{3, EC_DIR_INPUT, 2, "+self.cleanName()+"_el1004_pdos},\n"+
         "{0xff}\n"+
         "};\n\n")
-        data.append("static ec_slave_config_t *"+self.getSlaveConfigIdent()+" = NULL;\n")
-        data.append("static unsigned int "+self.getSlaveOffsetIdent()+"[4];\n")
-        data.append("static unsigned int "+self.getSlaveBitOffsetIdent()+"[4];\n")
+        self.addCode(data,"static ec_slave_config_t *"+self.getSlaveConfigIdent()+" = NULL;\n")
+        self.addCode(data,"static unsigned int "+self.getSlaveOffsetIdent()+"[4];\n")
+        self.addCode(data,"static unsigned int "+self.getSlaveBitOffsetIdent()+"[4];\n")
 
         self.addToDomainReg(mdlflags,0x3101,1,0,0)
         self.addToDomainReg(mdlflags,0x3102,1,1,1)
@@ -36,11 +36,11 @@ class Beckhoff_EL1004_Blk(EtherCATBlk):
 
     def MdlBlockStartFinal(self,mdlflags,data):
         for idx in range(0,4):
-            data.append("((double*)"+self.getBlockOutputPtr(idx)+")[0] = 0.0;\n")
+            self.addCode(data,"((double*)"+self.getBlockOutputPtr(idx)+")[0] = 0.0;\n")
 
     def MdlBlockRun(self,mdlfags, data):
         for idx in range(0,4):
-            data.append(
+            self.addCode(data,
                 "((double*)"+self.getBlockOutputPtr(idx)+")[0] = (double)EC_READ_BIT("+
                 self.getDataOffset(idx)+", "+
                 self.getDataBitOffset(idx)+");\n")        

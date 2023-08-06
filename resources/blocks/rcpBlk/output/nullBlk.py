@@ -5,13 +5,11 @@ from scipy import size
 class NullBlk(RCPblk):
 
    def MdlFunctions(self,mdlflags,data):
-      if 'toNull' in data:
-         return
-      data['toNull']="""
+      self.addFunction(data,'toNull',"""
       void toNull(int flag, python_block *block)
       {
       }
-      """
+      """)
 
 def nullBlk(pin):
     """

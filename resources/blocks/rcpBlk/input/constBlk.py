@@ -4,9 +4,7 @@ from scipy import size
 class ConstBlk(RCPblk):
 
     def MdlFunctions(self,mdlflags,data):
-        if 'constant' in data:
-            return
-        data['constant']="""
+        self.addFunction(data,'constant',"""
         void constant(int Flag, python_block *block)
         {
             double *y;
@@ -23,7 +21,7 @@ class ConstBlk(RCPblk):
                     break;
             }
         }
-        """
+        """)
 
 def constBlk(pout, val):
     """

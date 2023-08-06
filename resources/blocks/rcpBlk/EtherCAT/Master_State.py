@@ -6,16 +6,16 @@ class EtherCAT_Master_State_Blk(EtherCATBlk):
 
     def MdlBlockStartFinal(self,mdlflags,data):
         for idx in range(0,3):
-            data.append("((double*)"+self.getBlockOutputPtr(idx)+")[0] = 0.0;\n")
+            self.addCode(data,"((double*)"+self.getBlockOutputPtr(idx)+")[0] = 0.0;\n")
 
     def MdlBlockRun(self,mdlfags, data):
-        data.append("{\n")
-        data.append("   ec_master_state_t ms;\n")
-        data.append("   ecrt_master_state("+self.getMasterIdent(self.master_id)+", &ms);\n")
-        data.append("   ((double*)"+self.getBlockOutputPtr(0)+")[0] = (double)ms.slaves_responding;\n")
-        data.append("   ((double*)"+self.getBlockOutputPtr(1)+")[0] = (double)ms.al_states;\n")        
-        data.append("   ((double*)"+self.getBlockOutputPtr(2)+")[0] = (double)ms.link_up;\n")        
-        data.append("}\n")
+        self.addCode(data,"{\n")
+        self.addCode(data,"   ec_master_state_t ms;\n")
+        self.addCode(data,"   ecrt_master_state("+self.getMasterIdent(self.master_id)+", &ms);\n")
+        self.addCode(data,"   ((double*)"+self.getBlockOutputPtr(0)+")[0] = (double)ms.slaves_responding;\n")
+        self.addCode(data,"   ((double*)"+self.getBlockOutputPtr(1)+")[0] = (double)ms.al_states;\n")        
+        self.addCode(data,"   ((double*)"+self.getBlockOutputPtr(2)+")[0] = (double)ms.link_up;\n")        
+        self.addCode(data,"}\n")
 
 def ethercat_master_state_blk(pout,masterid):
     
